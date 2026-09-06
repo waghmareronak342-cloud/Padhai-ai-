@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Padhai AI</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#4C5FE8">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<style>
+  :root{
+    --bg:#F6F7FB;
+    --surface:#FFFFFF;
+    --border:#E6E8F0;
+    --ink:#1B1D28;
+    --ink-soft:#6B7086;
+    --accent:#4C5FE8;
+    --accent-soft:#EEF0FE;
+    --danger:#D64545;
+    --danger-soft:#FBEAEA;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,sans-serif;
+    display:flex;
+    flex-direction:column;
+    min-height:100vh;
+  }
+
+  header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:16px 20px;
+    background:var(--surface);
+    border-bottom:1px solid var(--border);
+    position:sticky;
+    top:0;
+    z-index:5;
+  }
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .brand-mark{
+    width:32px; height:32px;
+    border-radius:9px;
+    background:var(--accent);
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; font-weight:700; font-size:15px;
+  }
+  .brand-name{ font-size:16px; font-weight:600; }
+  .brand-sub{ font-size:11.5px; color:var(--ink-soft); margin-top:1px; }
+
+  .icon-btn{
+    width:36px; height:36px;
+    border-radius:10px;
+    border:1px solid var(--border);
+    background:var(--surface);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    color:var(--ink-soft);
+  }
+  .icon-btn:hover{ background:var(--bg); }
+
+  .subjects{
+    display:flex;
+    gap:8px;
+    overflow-x:auto;
+    padding:12px 20px;
+    background:var(--surface);
+    border-bottom:1px solid var(--border);
+    -ms-overflow-style:none;
+    scrollbar-width:none;
+  }
+  .subjects::-webkit-scrollbar{ display:none; }
+  .subj-btn{
+    flex:0 0 auto;
+    border:1px solid var(--border);
+    background:var(--bg);
+    color:var(--ink-soft);
+    padding:7px 14px;
+    border-radius:999px;
+    font-size:13px;
+    font-weight:500;
+    cursor:pointer;
+    white-space:nowrap;
+    transition:background .15s,color .15s,border-color .15s;
+  }
+  .subj-btn.active{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#fff;
+  }
+
+  main{
+    flex:1;
+    display:flex;
+    justify-content:center;
+    overflow-y:auto;
+  }
+  #thread{
+    width:100%;
+    max-width:640px;
+    padding:20px 16px 12px;
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+  }
+
+  .empty-state{
+    margin-top:40px;
+    text-align:center;
+    color:var(--ink-soft);
+    font-size:14px;
+    line-height:1.7;
+    padding:0 24px;
+  }
+  .empty-state .big-mark{
+    width:52px; height:52px;
+    border-radius:16px;
+    background:var(--accent-soft);
+    color:var(--accent);
+    display:flex; align-items:center; justify-content:center;
+    font-size:22px; font-weight:700;
+    margin:0 auto 14px;
+  }
+
+  .msg{ display:flex; flex-direction:column; gap:4px; }
+  .msg.user{ align-items:flex-end; }
+  .msg.ai{ align-items:flex-start; }
+
+  .role{ font-size:11px; color:var(--ink-soft); padding:0 4px; }
+
+  .bubble{
+    border-radius:var(--radius);
+    padding:12px 15px;
+    font-size:15px;
+    line-height:1.6;
+    max-width:88%;
+  }
+  .msg.user .bubble{
+    background:var(--accent);
+    color:#fff;
+    border-bottom-right-radius:4px;
+  }
+  .msg.ai .bubble{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-bottom-left-radius:4px;
+  }
+  .msg.ai .bubble p{ margin:0 0 10px; }
+  .msg.ai .bubble p:last-child{ margin-bottom:0; }
+  .msg.ai .bubble code{
+    background:var(--accent-soft);
+    padding:1px 5px;
+    border-radius:4px;
+    font-family:ui-monospace,SFMono-Regular,Consolas,monospace;
+    font-size:0.9em;
+  }
+  .msg.ai .bubble pre{
+    background:#1B1D28;
+    color:#F1F2F8;
+    padding:12px 14px;
+    border-radius:10px;
+    overflow-x:auto;
+    font-family:ui-monospace,SFMono-Regular,Consolas,monospace;
+    font-size:13px;
+  }
+  .msg.error .bubble{
+    background:var(--danger-soft);
+    color:#8C2E2E;
+    border:1px solid #F0CFCF;
+  }
+
+  .msg-image{
+    max-width:200px;
+    border-radius:12px;
+    border:1px solid var(--border);
+    display:block;
+  }
+
+  .thinking{
+    display:flex; align-items:center; gap:8px;
+    font-size:13px; color:var(--ink-soft);
+    padding:12px 15px;
+  }
+  .dot-flash{ display:flex; gap:3px; }
+  .dot-flash span{
+    width:6px; height:6px; border-radius:50%;
+    background:var(--accent);
+    animation:flash 1s infinite ease-in-out;
+  }
+  .dot-flash span:nth-child(2){ animation-delay:.15s; }
+  .dot-flash span:nth-child(3){ animation-delay:.3s; }
+  @keyframes flash{ 0%,80%,100%{opacity:.25;} 40%{opacity:1;} }
+
+  form#composer{
+    position:sticky;
+    bottom:0;
+    background:var(--surface);
+    border-top:1px solid var(--border);
+    padding:12px 16px;
+    display:flex;
+    justify-content:center;
+  }
+  .composer-inner{
+    width:100%;
+    max-width:640px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .image-preview{
+    display:none;
+    align-items:center;
+    gap:8px;
+    background:var(--accent-soft);
+    border-radius:10px;
+    padding:6px 10px;
+    font-size:12.5px;
+    color:var(--accent);
+    width:fit-content;
+  }
+  .image-preview.show{ display:flex; }
+  .image-preview img{
+    width:32px; height:32px;
+    object-fit:cover;
+    border-radius:6px;
+  }
+  .image-preview button{
+    border:none; background:none;
+    color:var(--accent);
+    cursor:pointer;
+    font-size:15px;
+    line-height:1;
+  }
+
+  .input-row{
+    display:flex;
+    align-items:flex-end;
+    gap:8px;
+  }
+  #question{
+    flex:1;
+    resize:none;
+    min-height:44px;
+    max-height:140px;
+    padding:11px 14px;
+    font-family:inherit;
+    font-size:15px;
+    color:var(--ink);
+    background:var(--bg);
+    border:1px solid var(--border);
+    border-radius:12px;
+    outline:none;
+  }
+  #question:focus{ border-color:var(--accent); background:var(--surface); }
+
+  .attach-btn, #send{
+    width:44px; height:44px;
+    border-radius:12px;
+    border:1px solid var(--border);
+    background:var(--bg);
+    color:var(--ink-soft);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    flex:0 0 auto;
+  }
+  .attach-btn:hover{ background:var(--accent-soft); color:var(--accent); }
+  #send{ background:var(--accent); border-color:var(--accent); color:#fff; }
+  #send:disabled{ opacity:.5; cursor:default; }
+
+  /* settings modal */
+  .modal-back{
+    position:fixed; inset:0;
+    background:rgba(27,29,40,0.45);
+    display:none;
+    align-items:center; justify-content:center;
+    z-index:10;
+    padding:20px;
+  }
+  .modal-back.open{ display:flex; }
+  .modal{
+    background:var(--surface);
+    border-radius:16px;
+    width:min(420px, 100%);
+    padding:22px;
+  }
+  .modal h2{ margin:0 0 6px; font-size:17px; }
+  .modal p{ font-size:13px; color:var(--ink-soft); line-height:1.6; margin:0 0 14px; }
+  .modal a{ color:var(--accent); }
+  .modal input{
+    width:100%;
+    padding:11px 12px;
+    border:1px solid var(--border);
+    border-radius:10px;
+    font-size:14px;
+    font-family:ui-monospace,SFMono-Regular,Consolas,monospace;
+    margin-bottom:14px;
+    background:var(--bg);
+  }
+  .modal-actions{ display:flex; justify-content:flex-end; gap:8px; }
+  .modal-actions button{
+    font-size:13.5px;
+    padding:9px 16px;
+    border-radius:10px;
+    cursor:pointer;
+    border:1px solid var(--border);
+    background:var(--bg);
+    color:var(--ink);
+  }
+  .modal-actions button.primary{
+    background:var(--accent);
+    color:#fff;
+    border-color:var(--accent);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-mark">P</div>
+    <div>
+      <div class="brand-name">Padhai AI</div>
+      <div class="brand-sub">Hindi · English · Math · Physics · Chemistry · Biology</div>
+    </div>
+  </div>
+  <div class="icon-btn" id="openSettings" title="API key">⚙</div>
+</header>
+
+<div class="subjects" id="subjects">
+  <button class="subj-btn active" data-subj="General">General</button>
+  <button class="subj-btn" data-subj="Hindi">हिंदी</button>
+  <button class="subj-btn" data-subj="English">English</button>
+  <button class="subj-btn" data-subj="Math">Math</button>
+  <button class="subj-btn" data-subj="Physics">Physics</button>
+  <button class="subj-btn" data-subj="Chemistry">Chemistry</button>
+  <button class="subj-btn" data-subj="Biology">Biology</button>
+</div>
+
+<main>
+  <div id="thread">
+    <div class="empty-state" id="emptyState">
+      <div class="big-mark">P</div>
+      Pick a subject, then type a question or attach a photo of it —
+      Padhai AI will explain the answer step by step.<br><br>
+      First time here? Tap <b>⚙</b> above and add a free Gemini API key.
+    </div>
+  </div>
+</main>
+
+<form id="composer">
+  <div class="composer-inner">
+    <div class="image-preview" id="imagePreview">
+      <img id="imagePreviewThumb" alt="">
+      <span>Image attached</span>
+      <button type="button" id="removeImage">✕</button>
+    </div>
+    <div class="input-row">
+      <div class="attach-btn" id="attachBtn" title="Attach image">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+      </div>
+      <input type="file" id="fileInput" accept="image/*" hidden>
+      <textarea id="question" placeholder="Type your question…" rows="1"></textarea>
+      <button type="submit" id="send" title="Send">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+      </button>
+    </div>
+  </div>
+</form>
+
+<div class="modal-back" id="modalBack">
+  <div class="modal">
+    <h2>Your Gemini API key</h2>
+    <p>
+      Padhai AI uses Google's free Gemini API. Get a free key at
+      <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">aistudio.google.com/app/apikey</a>
+      and paste it below. It's saved only in this browser, on this device,
+      and sent only to Google — never anywhere else.
+    </p>
+    <input type="password" id="apiKeyInput" placeholder="AIza...">
+    <div class="modal-actions">
+      <button type="button" id="cancelKey">Cancel</button>
+      <button type="button" id="saveKey" class="primary">Save key</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const thread = document.getElementById('thread');
+  const emptyState = document.getElementById('emptyState');
+  const composer = document.getElementById('composer');
+  const questionEl = document.getElementById('question');
+  const sendBtn = document.getElementById('send');
+  const subjectsWrap = document.getElementById('subjects');
+  const modalBack = document.getElementById('modalBack');
+  const apiKeyInput = document.getElementById('apiKeyInput');
+  const attachBtn = document.getElementById('attachBtn');
+  const fileInput = document.getElementById('fileInput');
+  const imagePreview = document.getElementById('imagePreview');
+  const imagePreviewThumb = document.getElementById('imagePreviewThumb');
+  const removeImageBtn = document.getElementById('removeImage');
+
+  let activeSubject = 'General';
+  let history = []; // {role:'user'|'model', parts:[{text}|{inlineData}]}
+  let pendingImage = null; // {mimeType, dataUrl, base64}
+
+  // ---- subject selection ----
+  subjectsWrap.addEventListener('click', (e)=>{
+    const btn = e.target.closest('.subj-btn');
+    if(!btn) return;
+    subjectsWrap.querySelectorAll('.subj-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    activeSubject = btn.dataset.subj;
+    questionEl.placeholder = activeSubject === 'General'
+      ? 'Type your question…'
+      : `Ask a ${activeSubject} question…`;
+  });
+
+  // ---- API key modal ----
+  function getKey(){ return localStorage.getItem('padhai_gemini_key') || ''; }
+  function openModal(){
+    apiKeyInput.value = getKey();
+    modalBack.classList.add('open');
+  }
+  function closeModal(){ modalBack.classList.remove('open'); }
+  document.getElementById('openSettings').addEventListener('click', openModal);
+  document.getElementById('cancelKey').addEventListener('click', closeModal);
+  document.getElementById('saveKey').addEventListener('click', ()=>{
+    const v = apiKeyInput.value.trim();
+    if(v) localStorage.setItem('padhai_gemini_key', v);
+    closeModal();
+  });
+  modalBack.addEventListener('click',(e)=>{ if(e.target === modalBack) closeModal(); });
+
+  // ---- image attach ----
+  attachBtn.addEventListener('click', ()=> fileInput.click());
+  fileInput.addEventListener('change', ()=>{
+    const file = fileInput.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      const dataUrl = reader.result;
+      const base64 = dataUrl.split(',')[1];
+      pendingImage = { mimeType: file.type, dataUrl, base64 };
+      imagePreviewThumb.src = dataUrl;
+      imagePreview.classList.add('show');
+    };
+    reader.readAsDataURL(file);
+  });
+  removeImageBtn.addEventListener('click', ()=>{
+    pendingImage = null;
+    fileInput.value = '';
+    imagePreview.classList.remove('show');
+  });
+
+  // ---- textarea auto-grow ----
+  questionEl.addEventListener('input', ()=>{
+    questionEl.style.height = 'auto';
+    questionEl.style.height = Math.min(questionEl.scrollHeight, 140) + 'px';
+  });
+  questionEl.addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter' && !e.shiftKey){
+      e.preventDefault();
+      composer.requestSubmit();
+    }
+  });
+
+  // ---- rendering ----
+  function addUserMsg(text, imageDataUrl){
+    emptyState.style.display = 'none';
+    const div = document.createElement('div');
+    div.className = 'msg user';
+    let inner = `<div class="role">You · ${activeSubject}</div>`;
+    if(imageDataUrl){
+      inner += `<img class="msg-image" src="${imageDataUrl}" alt="attached question">`;
+    }
+    if(text){
+      inner += `<div class="bubble"></div>`;
+    }
+    div.innerHTML = inner;
+    if(text) div.querySelector('.bubble').textContent = text;
+    thread.appendChild(div);
+    scrollDown();
+  }
+
+  function addThinking(){
+    const div = document.createElement('div');
+    div.className = 'msg ai';
+    div.innerHTML = `<div class="role">Padhai AI</div><div class="bubble thinking"><span class="dot-flash"><span></span><span></span><span></span></span> thinking…</div>`;
+    thread.appendChild(div);
+    scrollDown();
+    return div;
+  }
+
+  function scrollDown(){
+    window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'});
+  }
+
+  function mdToHtml(text){
+    let escaped = text
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    // strip stray LaTeX-style dollar delimiters, keep the math inside
+    escaped = escaped.replace(/\$\$([^$]+)\$\$/g, '$1');
+    escaped = escaped.replace(/\$([^$\n]+)\$/g, '$1');
+    escaped = escaped.replace(/```([\s\S]*?)```/g, (m, code)=>`<pre>${code.trim()}</pre>`);
+    escaped = escaped.replace(/`([^`]+)`/g, '<code>$1</code>');
+    escaped = escaped.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    const paragraphs = escaped.split(/\n{2,}/).map(p=>{
+      if(p.startsWith('<pre>')) return p;
+      return '<p>' + p.replace(/\n/g,'<br>') + '</p>';
+    });
+    return paragraphs.join('');
+  }
+
+  function replaceThinkingWithAnswer(node, text){
+    node.innerHTML = `<div class="role">Padhai AI · ${activeSubject}</div><div class="bubble">${mdToHtml(text)}</div>`;
+    scrollDown();
+  }
+  function replaceThinkingWithError(node, msg){
+    node.className = 'msg error';
+    node.innerHTML = `<div class="role">Couldn't get an answer</div><div class="bubble">${msg}</div>`;
+  }
+
+  // ---- system instruction per subject ----
+  function systemInstruction(subject){
+    const base = `You are Padhai AI, a patient tutor for school and college
+students in India. Always explain step by step before giving the final
+answer. If a photo of a question is attached, first read it carefully,
+then solve it. Use simple, encouraging language. If the student writes in
+Hindi or Hinglish, you may reply in the same style; otherwise reply in
+English. For numerical problems, show each working step on its own line.
+Never use LaTeX or dollar-sign math notation (no $...$ or $$...$$) — write
+all numbers, equations, and formulas as plain text, e.g. "1 + 1 = 2".`;
+    const bySubject = {
+      Hindi: 'Focus on Hindi grammar, vyakaran, comprehension (gadyansh), and literature questions.',
+      English: 'Focus on English grammar, comprehension, vocabulary, and writing. Name the specific rule being applied.',
+      Math: 'Focus on mathematics. Show every calculation step and clearly state the final answer.',
+      Physics: 'Focus on physics. State the relevant law/formula, plug in values with units, and explain the reasoning.',
+      Chemistry: 'Focus on chemistry. Reference the relevant concept and balance any equations shown.',
+      Biology: 'Focus on biology. Use correct terminology and describe processes in clear ordered steps.',
+      General: 'The student has not picked a specific subject — answer whatever they ask as clearly as possible.'
+    };
+    return base + '\n\n' + (bySubject[subject] || bySubject.General);
+  }
+
+  // ---- Gemini call ----
+  async function askGemini(question, image){
+    const key = getKey();
+    if(!key){
+      openModal();
+      throw new Error('Please add your free Gemini API key first (tap ⚙ above).');
+    }
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${encodeURIComponent(key)}`;
+
+    const contents = history.map(h => ({ role: h.role, parts: h.parts }));
+
+    const userParts = [];
+    if(image){
+      userParts.push({ inlineData: { mimeType: image.mimeType, data: image.base64 } });
+    }
+    userParts.push({ text: question || 'Please read the attached image and solve the question in it.' });
+    contents.push({ role:'user', parts: userParts });
+
+    const body = {
+      contents,
+      systemInstruction: { role:'system', parts:[{ text: systemInstruction(activeSubject) }] },
+      generationConfig: { temperature: 0.4 }
+    };
+
+    const res = await fetch(url, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify(body)
+    });
+
+    if(!res.ok){
+      let detail = '';
+      try{ const j = await res.json(); detail = j.error && j.error.message ? j.error.message : ''; }catch(e){}
+      if(res.status === 400 && /API key/i.test(detail)){
+        throw new Error('That API key was rejected. Please check it in ⚙ and try again.');
+      }
+      if(res.status === 429){
+        throw new Error('Free quota reached for the moment — please wait a bit and try again.');
+      }
+      throw new Error(detail || `Request failed (status ${res.status}). Please try again.`);
+    }
+
+    const data = await res.json();
+    const candidate = data.candidates && data.candidates[0];
+    const parts = candidate && candidate.content && candidate.content.parts;
+    const text = parts && parts.map(p=>p.text || '').join('').trim();
+    if(!text){
+      throw new Error('No answer came back — please try rephrasing your question.');
+    }
+    return { text, userParts };
+  }
+
+  // ---- submit flow ----
+  composer.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const q = questionEl.value.trim();
+    const image = pendingImage;
+    if(!q && !image) return;
+
+    addUserMsg(q, image ? image.dataUrl : null);
+    questionEl.value = '';
+    questionEl.style.height = 'auto';
+    fileInput.value = '';
+    imagePreview.classList.remove('show');
+    pendingImage = null;
+    sendBtn.disabled = true;
+
+    const thinkingNode = addThinking();
+
+    try{
+      const { text, userParts } = await askGemini(q, image);
+      history.push({ role:'user', parts: userParts });
+      history.push({ role:'model', parts: [{ text }] });
+      replaceThinkingWithAnswer(thinkingNode, text);
+    }catch(err){
+      replaceThinkingWithError(thinkingNode, err.message || 'Something went wrong. Please try again.');
+    }finally{
+      sendBtn.disabled = false;
+      questionEl.focus();
+    }
+  });
+
+  if(!getKey()){
+    setTimeout(openModal, 400);
+  }
+
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', ()=>{
+      navigator.serviceWorker.register('sw.js').catch(()=>{});
+    });
+  }
+})();
+</script>
+
+</body>
+</html>
